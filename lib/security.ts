@@ -54,8 +54,44 @@ export function safeNext(value: string | null): string {
     url.searchParams.delete(key);
   return url.pathname + url.search;
 }
+export const productionOrigin =
+  "https://humor-prompt-chain-tool-ashy.vercel.app";
+export function configuredAppOrigin() {
+  const value = process.env.APP_ORIGIN;
+  const invalid = () =>
+    new AppError("Application origin is not configured correctly.", 503);
+  if (!value) {
+    if (
+      process.env.NODE_ENV === "production" ||
+      process.env.VERCEL_ENV === "production"
+    )
+      throw invalid();
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw invalid();
+  }
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash ||
+    (url.protocol !== "https:" &&
+      !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) ||
+    url.hostname === "humor-prompt-chain-tool.vercel.app" ||
+    (process.env.VERCEL_ENV === "production" && url.origin !== productionOrigin)
+  )
+    throw invalid();
+  return url.origin;
+}
 export function requestOrigin(request: Request) {
-  if (process.env.APP_ORIGIN) return new URL(process.env.APP_ORIGIN).origin;
+  const configured = configuredAppOrigin();
+  if (configured) return configured;
   const url = new URL(request.url);
   const host = request.headers.get("host");
   // Browser Origin must match the actual target Host, not Next's internal server hostname.

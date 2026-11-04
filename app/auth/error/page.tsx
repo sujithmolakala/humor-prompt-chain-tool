@@ -1,4 +1,4 @@
-import { safeNext } from "@/lib/security";
+import { safeNext, configuredAppOrigin } from "@/lib/security";
 import SignOut from "@/components/SignOut";
 export default async function AuthError({
   searchParams,
@@ -6,8 +6,9 @@ export default async function AuthError({
   searchParams: Promise<{ temporary?: string; next?: string }>;
 }) {
   const params = await searchParams;
-  const signInUrl = process.env.APP_ORIGIN
-    ? new URL("/sign-in", process.env.APP_ORIGIN).toString()
+  const origin = configuredAppOrigin();
+  const signInUrl = origin
+    ? new URL("/sign-in", origin).toString()
     : "/sign-in";
   const temporary = params.temporary === "1";
   return (

@@ -456,7 +456,7 @@ test("exact production and localhost callback URLs survive a strict Supabase all
   await transport(
     async () => {
       for (const origin of [
-        "https://humor-prompt-chain-tool.vercel.app",
+        "https://humor-prompt-chain-tool-ashy.vercel.app",
         "http://localhost:3002",
       ]) {
         process.env.APP_ORIGIN = origin;

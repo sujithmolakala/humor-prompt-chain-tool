@@ -15,7 +15,17 @@ export async function proxy(request: NextRequest) {
     response.headers.set("X-Frame-Options", "DENY");
     return response;
   };
-  const origin = requestOrigin(request);
+  let origin: string;
+  try {
+    origin = requestOrigin(request);
+  } catch {
+    return finish(
+      NextResponse.json(
+        { error: "Application origin is not configured correctly." },
+        { status: 503 },
+      ),
+    );
+  }
   if (process.env.APP_ORIGIN && request.nextUrl.origin !== origin) {
     // 307 retains method/body; never start OAuth or write cookies on an alias.
     return finish(

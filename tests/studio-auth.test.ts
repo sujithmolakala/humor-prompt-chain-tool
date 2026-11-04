@@ -78,14 +78,14 @@ test("OAuth uses shared Google provider, exact production callback and no domain
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   ] as const;
   const previous = names.map((k) => process.env[k]);
-  process.env.APP_ORIGIN = "https://humor-prompt-chain-tool.vercel.app";
+  process.env.APP_ORIGIN = "https://humor-prompt-chain-tool-ashy.vercel.app";
   process.env.NEXT_PUBLIC_SUPABASE_URL =
     "https://shared-humor-study.supabase.co";
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "fixture-public-key";
   try {
     const response = await start(
       new NextRequest(
-        "https://humor-prompt-chain-tool.vercel.app/auth/sign-in",
+        "https://humor-prompt-chain-tool-ashy.vercel.app/auth/sign-in",
       ),
     );
     const destination = new URL(response.headers.get("location")!);
@@ -93,7 +93,7 @@ test("OAuth uses shared Google provider, exact production callback and no domain
     assert.equal(destination.searchParams.get("provider"), "google");
     assert.equal(
       destination.searchParams.get("redirect_to"),
-      "https://humor-prompt-chain-tool.vercel.app/auth/callback",
+      "https://humor-prompt-chain-tool-ashy.vercel.app/auth/callback",
     );
     for (const key of ["hd", "domain", "login_hint", "organization"])
       assert.equal(destination.searchParams.has(key), false);

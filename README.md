@@ -53,7 +53,7 @@ Reuse existing Google provider configuration. The host-only cookie namespace is 
 **Owner-approved Supabase redirect allowlist additions:**
 
 - `http://localhost:3002/auth/callback`
-- `https://humor-prompt-chain-tool.vercel.app/auth/callback` (currently missing from the shared allowlist; owner approval is required before adding it)
+- `https://humor-prompt-chain-tool-ashy.vercel.app/auth/callback` (currently missing from the shared allowlist; owner approval is required before adding it)
 
 Keep existing Site URL, Google provider settings and existing redirects unchanged. No additional Google authorized redirect URI is normally needed because Google already redirects to the shared Supabase `/auth/v1/callback`. Inspect actual hosted configuration before making any change. A new Vercel domain alone does not establish working OAuth.
 
