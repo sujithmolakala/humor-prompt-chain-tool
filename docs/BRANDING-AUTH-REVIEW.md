@@ -39,3 +39,7 @@ The project owner must approve and add the exact production callback in the shar
 ## Validation for this change
 
 ESLint, strict TypeScript, 24 automated tests, seven browser scenarios and production build passed. Browser coverage includes exact login text/title, mobile layout, legacy `/login` redirect, Google provider and callback without domain hints, all protected API families, direct protected-page navigation and existing workflow functionality. Screenshots were captured using disposable fixture data. A secret scan runs again before commit. Deployment verification is tracked separately; local checks do not establish live account login.
+
+## Deployment verification after push
+
+GitHub Vercel status confirmed successful deployment of source commit `83256f6ac1b46a52b230e1089798e7a5c8109a2f`: https://vercel.com/sujith-molakala/humor-prompt-chain-tool/AiJGbcMoHe7YhpGXKjX8s9xsvAWr . This is a deployment inspection record, not a verified website URL. The bare domain still serves the other source. The team alias `https://humor-prompt-chain-tool-sujith-molakala.vercel.app` and main-branch alias `https://humor-prompt-chain-tool-git-main-sujith-molakala.vercel.app` respond with redirects to Vercel SSO, preventing unauthenticated page verification. No protection was bypassed or changed. Authenticated Vercel access or confirmation of the actual production URL is required to inspect the production source/environment and test the updated login page. The expected callback must match that confirmed canonical origin; do not add a different domain's callback blindly.
