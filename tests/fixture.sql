@@ -1,0 +1,22 @@
+-- ISOLATED PGLITE ONLY. Never execute in Supabase.
+create role anon;
+create role authenticated;
+create role service_role bypassrls;
+create schema auth;
+create schema storage;
+create table auth.users(id uuid primary key, created_at timestamptz not null default now());
+create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+grant usage on schema auth,storage to anon,authenticated,service_role;
+grant execute on function auth.uid() to anon,authenticated,service_role;
+create table public.profiles(id uuid primary key references auth.users(id) on delete cascade,first_name text,last_name text,avatar_url text,email text,is_admin boolean default false);
+create table public.movies(id bigint generated always as identity primary key,title text,year integer);
+create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text,owner_id text);
+alter table storage.objects enable row level security;
+create function storage.foldername(name text) returns text[] language sql immutable as $$ select string_to_array(name,'/') $$;
+grant all on storage.objects to anon,authenticated;
+grant all on public.profiles,public.movies to anon,authenticated;
+grant update(email,is_admin) on public.profiles to authenticated;
+create policy legacy_profile_everything on public.profiles for all to anon,authenticated using(true) with check(true);
+create policy legacy_movie_everything on public.movies for all to anon,authenticated using(true) with check(true);
+create policy legacy_storage_everything on storage.objects for all to anon,authenticated using(true) with check(true);
