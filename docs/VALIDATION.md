@@ -25,3 +25,7 @@ The initial browser attempt on numeric loopback timed out. Using localhost resol
 - Admin commit-specific deployment URL retrieval from authenticated Vercel. Public URL is backed by GitHub successful deployment evidence, not a new live OAuth verification.
 
 Use README commands to repeat every check. Test scripts are isolated and do not provide a production authentication bypass.
+
+## Repository publication
+
+Created and pushed the independent public repository https://github.com/sujithmolakala/humor-prompt-chain-tool under the authenticated `sujithmolakala` account. Main branch verified through GitHub. GitHub Actions quality/browser workflows are included; remote CI status must be checked independently from the completed local checks. No Vercel project or deployment has been created because CLI authentication remains unavailable.

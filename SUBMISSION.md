@@ -14,4 +14,4 @@ After Vercel login, inspect the admin deployment linked above and copy its uniqu
 
 Repository and new local validation evidence are documented in README and docs/VALIDATION.md. This document intentionally leaves unavailable URLs visibly pending.
 
-Independent source repository: https://github.com/sujithmolakala/humor-prompt-chain-tool (verify creation in the final report).
+Independent source repository: https://github.com/sujithmolakala/humor-prompt-chain-tool — created and pushed; GitHub owner and main branch verified.
