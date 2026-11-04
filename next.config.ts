@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    return [{ source: "/login", destination: "/sign-in", permanent: false }];
+  },
   turbopack: {
     rules: { "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" } },
   },

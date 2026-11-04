@@ -6,7 +6,7 @@ Deadline: November 5, 2026, 4:30 PM EST.
 | --- | --- | --- |
 | Public Humor Study (`hello-world-nextjs`) | https://hello-world-nextjs-exp91k077-sujith-molakala.vercel.app | GitHub Production deployment `7102912049`, success, source commit `917a2ffcd0bd159d3d0d1431b5d9dfa29221ad5f` |
 | Admin (`ai-rating-admin`) | **PENDING — retrieve from authenticated Vercel dashboard** | Commit `c44f7035743241ba77a19cb339143bb6f8834787`; GitHub Vercel success status links to https://vercel.com/sujith-molakala/ai-rating-admin/DewEfZaWcRbJZd7sHVvdUMwb33zH ; this is a dashboard link, not a submission deployment URL |
-| Prompt Chain Tool (`humor-prompt-chain-tool`) | **PENDING — Vercel login and new deployment required** | `npx vercel whoami` reports logged out; no deployment claimed |
+| Humor Study Studio (`humor-prompt-chain-tool`) | **PENDING — Vercel login and new deployment required** | `npx vercel whoami` reports logged out; no deployment claimed |
 
 The public URL is verified through GitHub's successful deployment status, not a new live OAuth test. Existing apps were not modified or redeployed.
 

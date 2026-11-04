@@ -29,3 +29,7 @@ Use README commands to repeat every check. Test scripts are isolated and do not 
 ## Repository publication
 
 Created and pushed the independent public repository https://github.com/sujithmolakala/humor-prompt-chain-tool under the authenticated `sujithmolakala` account. Main branch verified through GitHub. GitHub Actions quality/browser workflows are included; remote CI status must be checked independently from the completed local checks. No Vercel project or deployment has been created because CLI authentication remains unavailable.
+
+## Humor Study Studio branding/authentication update
+
+Updated login to the three requested elements; retained the deployed warm serif design. Application navigation, header and browser metadata use Humor Study Studio. Existing superadmin verification matches `ai-rating-admin` exactly and was retained. Added personal-Gmail and Columbia superadmin tests, non-superadmin/unsigned denials, real SQL role checks, exact login and title browser checks, and domain-free Google OAuth checks. Validation: ESLint, TypeScript, 24 automated tests, seven browser scenarios and production build pass. See [BRANDING-AUTH-REVIEW.md](BRANDING-AUTH-REVIEW.md) for controlled hosted OAuth results: the new callback currently falls back to the public Site URL, while the two existing application callbacks pass. No hosted Auth settings or database migrations were changed.

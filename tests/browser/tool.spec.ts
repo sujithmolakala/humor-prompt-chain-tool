@@ -17,11 +17,23 @@ test("unauthenticated and non-superadmin pages and every protected API are denie
   context,
   request,
 }) => {
-  for (const path of ["/", "/chains", "/execute", "/history", "/settings"]) {
+  for (const path of [
+    "/",
+    "/chains",
+    `/chains/${chain}`,
+    "/execute",
+    "/history",
+    `/history/${chain}`,
+    "/settings",
+  ]) {
     await page.goto(path);
     await expect(page).toHaveURL(/sign-in/);
   }
-  for (const path of ["/api/chains", "/api/history"])
+  for (const path of [
+    "/api/chains",
+    "/api/history",
+    `/api/history/${chain}/image`,
+  ])
     expect((await request.get(path)).status()).toBe(401);
   await login(context, member);
   await page.goto("/chains");
@@ -225,7 +237,8 @@ test("light, dark and system themes persist and follow OS changes", async ({
   page,
   context,
 }) => {
-  await page.goto("/sign-in");
+  await login(context);
+  await page.goto("/");
   const theme = page.getByLabel("Theme preference");
   await theme.selectOption("dark");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -275,4 +288,56 @@ test("desktop and mobile workspace renders without horizontal overflow", async (
     path: "docs/previews/chains-mobile.png",
     fullPage: true,
   });
+});
+
+test("Humor Study Studio login contains exactly the requested text and unrestricted Google sign-in", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page).toHaveTitle("Sign in · Humor Study Studio");
+  const button = page.getByRole("button", {
+    name: "Sign in with Google",
+    exact: true,
+  });
+  await expect(button).toBeEnabled();
+  expect(
+    (await page.locator("main").innerText())
+      .split("\n")
+      .filter((s) => s.trim()),
+  ).toEqual([
+    "Humor Study Studio",
+    "Authorized superadmins only",
+    "Sign in with Google",
+  ]);
+  await expect(page.locator("main")).not.toContainText(
+    /columbia|matrix|flavor/i,
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: "docs/previews/login-desktop.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: "docs/previews/login-mobile.png" });
+  await page.route("http://localhost:4319/auth/v1/authorize**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/plain",
+      body: "Explicit OAuth fixture destination",
+    }),
+  );
+  const authorization = page.waitForRequest((r) =>
+    r.url().startsWith("http://localhost:4319/auth/v1/authorize"),
+  );
+  await button.click();
+  const destination = new URL((await authorization).url());
+  expect(destination.searchParams.get("provider")).toBe("google");
+  expect(destination.searchParams.get("redirect_to")).toBe(
+    "http://localhost:4318/auth/callback",
+  );
+  for (const key of ["hd", "domain", "login_hint", "organization"])
+    expect(destination.searchParams.has(key)).toBe(false);
 });

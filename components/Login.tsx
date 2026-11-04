@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
 import { useHydrated } from "./useHydrated";
 import { safeNext } from "@/lib/security";
 export default function Login({ configured }: { configured: boolean }) {
@@ -29,9 +28,7 @@ export default function Login({ configured }: { configured: boolean }) {
           }
         }}
       >
-        <span className="google-mark">G</span>
-        {busy ? "Connecting…" : "Continue with Google"}
-        <ArrowUpRight size={18} />
+        {busy ? "Connecting…" : "Sign in with Google"}
       </button>
       {busy && (
         <span className="sr-only" role="status">

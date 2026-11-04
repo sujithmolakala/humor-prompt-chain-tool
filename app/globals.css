@@ -961,3 +961,71 @@ code {
     flex-wrap: wrap;
   }
 }
+
+/* Preserve the deployed studio login's warm palette, serif title and pill button. */
+.studio-login {
+  background: #f4f0e8;
+  color: #1b1815;
+  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  padding: 48px 24px;
+}
+.studio-login .auth-card {
+  max-width: 512px;
+  padding: 40px;
+  background: rgba(255, 250, 245, 0.88);
+  border: 1px solid rgba(92, 79, 67, 0.14);
+  border-radius: 32px;
+  box-shadow: 0 20px 50px rgba(61, 49, 39, 0.08);
+}
+.studio-login h1 {
+  font-family:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: -1.2px;
+  margin-bottom: 16px;
+}
+.studio-login .auth-card > .muted {
+  color: #7b7067;
+  font-size: 14px;
+  margin: 0 0 32px;
+}
+.studio-login .login-button {
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #1f5b52;
+  color: #f8f6f1;
+  font-size: 16px;
+  font-weight: 400;
+}
+.studio-login .login-button:hover {
+  background: #194d45;
+}
+.studio-login :focus-visible {
+  outline-color: #1f5b52;
+}
+:root[data-theme="dark"] .studio-login {
+  background: var(--bg);
+  color: var(--text);
+}
+:root[data-theme="dark"] .studio-login .auth-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .studio-login .muted {
+  color: var(--muted);
+}
+@media (max-width: 550px) {
+  .studio-login .auth-card {
+    padding: 32px 24px;
+  }
+  .studio-login h1 {
+    font-size: 40px;
+  }
+}

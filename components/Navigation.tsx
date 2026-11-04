@@ -20,8 +20,7 @@ export default function Navigation() {
           <Workflow size={22} />
         </span>
         <span>
-          Humor <strong>Chains</strong>
-          <small>WORKFLOW STUDIO</small>
+          Humor Study <strong>Studio</strong>
         </span>
       </Link>
       <p className="nav-label">WORKSPACE</p>

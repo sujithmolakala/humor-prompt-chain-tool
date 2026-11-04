@@ -12,9 +12,7 @@ export default async function ToolLayout({
       <Navigation />
       <div className="main-column">
         <header className="topbar">
-          <span>
-            Humor Study <span className="muted">/ Prompt Chain Tool</span>
-          </span>
+          <span>Humor Study Studio</span>
           <span className="tag">Private workspace</span>
         </header>
         <main id="main-content">{children}</main>

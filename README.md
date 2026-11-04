@@ -1,4 +1,4 @@
-# Humor Prompt Chain Tool
+# Humor Study Studio
 
 Independent Next.js application for designing, executing, and reviewing image-to-humor prompt workflows. Shares the existing Humor Study Supabase backend. Access requires Google sign-in and a live `profiles.is_superadmin === true` check.
 
@@ -46,12 +46,14 @@ Open http://localhost:3002. The other apps can keep their existing ports. Use No
 
 ## Authentication
 
+Humor Study Studio uses the same Supabase project and existing superadmin profiles as `ai-rating-admin`. Any Google account domain is eligible to authenticate; only `profiles.is_superadmin === true` grants access. There is no domain filter, separate administrator membership, or second user database. See [the branding and authentication review](docs/BRANDING-AUTH-REVIEW.md) for the production deployment discrepancy and callback configuration.
+
 Reuse existing Google provider configuration. The host-only cookie namespace is `humor-prompt-chain-auth`; existing app sessions are unaffected. Login uses a verifier cookie and an exact callback, with return context in a separate short-lived HttpOnly cookie. Callback handles expired/missing verifiers and does not bypass subsequent authorization. Logout clears only this app's cookies and attempts revocation. Authentication outages fail closed.
 
 **Owner-approved Supabase redirect allowlist additions:**
 
 - `http://localhost:3002/auth/callback`
-- `https://<new-production-domain>/auth/callback` (replace with the actual verified deployment domain)
+- `https://humor-prompt-chain-tool.vercel.app/auth/callback` (currently missing from the shared allowlist; owner approval is required before adding it)
 
 Keep existing Site URL, Google provider settings and existing redirects unchanged. No additional Google authorized redirect URI is normally needed because Google already redirects to the shared Supabase `/auth/v1/callback`. Inspect actual hosted configuration before making any change. A new Vercel domain alone does not establish working OAuth.
 
