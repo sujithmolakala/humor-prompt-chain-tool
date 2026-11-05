@@ -11,6 +11,13 @@ import {
 } from "@/lib/oauth-context";
 import { logOAuthFailure } from "@/lib/oauth-diagnostics";
 export async function GET(request: NextRequest) {
+  const origin = requestOrigin(request);
+  // A code/verifier belongs to the initiating host. Never exchange it on an alias.
+  if (request.nextUrl.origin !== origin) {
+    return NextResponse.redirect(new URL("/sign-in?oauth=expired", origin), {
+      headers: privateHeaders,
+    });
+  }
   const context = readOAuthContext(
     request.cookies.get(oauthContextName)?.value,
   );
@@ -35,7 +42,7 @@ export async function GET(request: NextRequest) {
         request.nextUrl.searchParams.get("next") ??
           (useContext ? context.next : null),
       ),
-      requestOrigin(request),
+      origin,
     ),
   );
   // Remove short-lived app state on both successful and failed completion.
@@ -101,11 +108,19 @@ export async function GET(request: NextRequest) {
           ["AuthRetryableFetchError", "AbortError", "TimeoutError"].includes(
             String(error.name),
           )));
+    const outcome = temporary
+      ? "unavailable"
+      : reason === "provider_callback_error"
+        ? request.nextUrl.searchParams.get("error") === "access_denied"
+          ? "cancelled"
+          : "provider"
+        : reason === "session_missing_after_exchange"
+          ? "session"
+          : reason === "configuration_missing"
+            ? "unavailable"
+            : "expired";
     const failure = NextResponse.redirect(
-      new URL(
-        temporary ? "/auth/error?temporary=1" : "/auth/error",
-        requestOrigin(request),
-      ),
+      new URL(`/sign-in?oauth=${outcome}`, origin),
     );
     response.cookies.getAll().forEach((c) => failure.cookies.set(c));
     Object.entries(privateHeaders).forEach(([k, v]) =>

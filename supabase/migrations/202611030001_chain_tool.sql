@@ -79,11 +79,20 @@ begin
 end $$;
 -- Private input images use Supabase Storage; no public URL or service key.
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values('prompt-chain-inputs','prompt-chain-inputs',false,3145728,array['image/webp']);
-create policy pct_input_insert on storage.objects for insert to authenticated with check(bucket_id='prompt-chain-inputs' and (storage.foldername(name))[1]=auth.uid()::text and exists(select 1 from public.profiles where id=auth.uid() and is_superadmin is true));
-create policy pct_input_select on storage.objects for select to authenticated using(bucket_id='prompt-chain-inputs' and exists(select 1 from public.profiles where id=auth.uid() and is_superadmin is true));
+-- Public restrictive policies are planned for anonymous avatar requests too.
+-- A direct profiles subquery requires profile SELECT privileges even when the
+-- bucket predicate is true. Expose only the current caller's role, never rows.
+create function public.pct_is_superadmin() returns boolean
+language sql stable security definer set search_path='' as $$
+ select exists(select 1 from public.profiles where id=auth.uid() and is_superadmin is true);
+$$;
+revoke all on function public.pct_is_superadmin() from public,anon,authenticated,service_role;
+grant execute on function public.pct_is_superadmin() to anon,authenticated;
+create policy pct_input_insert on storage.objects for insert to authenticated with check(bucket_id='prompt-chain-inputs' and (storage.foldername(name))[1]=auth.uid()::text and public.pct_is_superadmin());
+create policy pct_input_select on storage.objects for select to authenticated using(bucket_id='prompt-chain-inputs' and public.pct_is_superadmin());
 -- Restrictive fences prevent legacy broad policies from exposing this new bucket.
-create policy pct_input_read_fence on storage.objects as restrictive for select to public using(bucket_id<>'prompt-chain-inputs' or (auth.uid() is not null and exists(select 1 from public.profiles where id=auth.uid() and is_superadmin is true)));
-create policy pct_input_write_fence on storage.objects as restrictive for insert to public with check(bucket_id<>'prompt-chain-inputs' or ((storage.foldername(name))[1]=auth.uid()::text and owner_id=auth.uid()::text and exists(select 1 from public.profiles where id=auth.uid() and is_superadmin is true)));
+create policy pct_input_read_fence on storage.objects as restrictive for select to public using(bucket_id<>'prompt-chain-inputs' or (auth.uid() is not null and public.pct_is_superadmin()));
+create policy pct_input_write_fence on storage.objects as restrictive for insert to public with check(bucket_id<>'prompt-chain-inputs' or ((storage.foldername(name))[1]=auth.uid()::text and owner_id=auth.uid()::text and public.pct_is_superadmin()));
 create policy pct_input_update_fence on storage.objects as restrictive for update to public using(bucket_id<>'prompt-chain-inputs') with check(bucket_id<>'prompt-chain-inputs');
 create policy pct_input_delete_fence on storage.objects as restrictive for delete to public using(bucket_id<>'prompt-chain-inputs');
 

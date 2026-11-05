@@ -1,9 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useHydrated } from "./useHydrated";
+import { fragmentOAuthOutcome } from "@/lib/oauth-errors";
 import { safeNext } from "@/lib/security";
 export default function Login({ configured }: { configured: boolean }) {
   const ready = useHydrated();
+  useEffect(() => {
+    // Supabase may return errors in a fragment, which the server cannot read.
+    const outcome = fragmentOAuthOutcome(location.hash);
+    if (outcome) {
+      const retry = new URL("/sign-in", location.origin);
+      retry.searchParams.set("oauth", outcome);
+      location.replace(retry.toString());
+    }
+  }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (

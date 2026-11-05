@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdminPage } from "@/lib/auth";
 import { getState, getHistory } from "@/lib/tool-data";
-import { Heading, Setup } from "@/components/Common";
+import { Setup } from "@/components/Common";
 export default async function Overview() {
   const access = await requireAdminPage();
   const result = await Promise.allSettled([
@@ -12,18 +12,22 @@ export default async function Overview() {
   const history = result[1].status === "fulfilled" ? result[1].value : null;
   return (
     <>
-      <Heading
-        eyebrow="WORKSPACE OVERVIEW"
-        title="Your next great caption starts here."
-        description="Build thoughtful workflows. Follow every step. Keep every result."
-      >
-        <Link className="button primary" href="/chains?create=1">
-          + Create chain
-        </Link>
-        <Link className="button" href="/execute">
-          Run a workflow ↗
-        </Link>
-      </Heading>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">WORKSPACE OVERVIEW</p>
+          <p className="muted">
+            Build thoughtful workflows. Follow every step. Keep every result.
+          </p>
+        </div>
+        <div className="actions">
+          <Link className="button primary" href="/chains?create=1">
+            + Create chain
+          </Link>
+          <Link className="button" href="/execute">
+            Run a workflow ↗
+          </Link>
+        </div>
+      </div>
       {!state && (
         <Setup message="The shared prompt runtime is unavailable. Existing applications remain independent." />
       )}

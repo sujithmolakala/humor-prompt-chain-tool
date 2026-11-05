@@ -352,7 +352,7 @@ test("callback reports missing verifier and failed exchange without logging code
         );
         assert.equal(
           missing.headers.get("location"),
-          "https://admin.invalid/auth/error",
+          "https://admin.invalid/sign-in?oauth=expired",
         );
         assert.equal(calls, 0);
         const failed = await callback(
@@ -368,7 +368,7 @@ test("callback reports missing verifier and failed exchange without logging code
         );
         assert.equal(
           failed.headers.get("location"),
-          "https://admin.invalid/auth/error",
+          "https://admin.invalid/sign-in?oauth=expired",
         );
         assert.equal(calls, 1);
       },
@@ -539,5 +539,74 @@ test("OAuth context rejects malformed state and sanitizes external return destin
       encodeOAuthContext("https://hello-world-nextjs-five-mu.vercel.app"),
     )?.next,
     "/",
+  );
+});
+
+test("provider failure, cancellation, invalid code and wrong callback host stay in Studio for production and localhost", async () => {
+  await transport(
+    async () => {
+      for (const origin of [
+        "https://humor-prompt-chain-tool-ashy.vercel.app",
+        "http://localhost:3002",
+      ]) {
+        process.env.APP_ORIGIN = origin;
+        for (const [query, outcome] of [
+          [
+            "error=access_denied&error_description=https://public.invalid",
+            "cancelled",
+          ],
+          ["error=server_error&next=https://public.invalid", "provider"],
+          ["code=expired&next=//public.invalid", "expired"],
+          ["", "expired"],
+        ]) {
+          const response = await callback(
+            new NextRequest(`${origin}/auth/callback?${query}`),
+          );
+          assert.equal(
+            response.headers.get("location"),
+            `${origin}/sign-in?oauth=${outcome}`,
+          );
+          assert.match(response.headers.get("cache-control")!, /no-store/);
+          assert.equal(
+            response.cookies.get("humor-prompt-chain-oauth-context")?.maxAge ??
+              0,
+            0,
+          );
+        }
+        const wrong = await callback(
+          new NextRequest(
+            "https://public.invalid/auth/callback?code=private-code",
+          ),
+        );
+        assert.equal(
+          wrong.headers.get("location"),
+          `${origin}/sign-in?oauth=expired`,
+        );
+      }
+    },
+    async () => {
+      throw new Error("No exchange without the host's verifier");
+    },
+  );
+});
+
+test("OAuth startup failure stays on Studio sign-in with a fixed message", async () => {
+  const { GET: start } = await import("../app/auth/sign-in/route");
+  await transport(
+    async () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = "invalid-url";
+      const response = await start(
+        new NextRequest(
+          "https://admin.invalid/auth/sign-in?next=https://public.invalid",
+        ),
+      );
+      assert.equal(
+        response.headers.get("location"),
+        "https://admin.invalid/sign-in?oauth=unavailable",
+      );
+    },
+    async () => {
+      throw new Error("No network expected");
+    },
   );
 });

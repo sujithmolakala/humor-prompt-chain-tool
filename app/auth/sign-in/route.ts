@@ -65,7 +65,10 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     logOAuthFailure("start", "provider_start_failed", error);
-    response.headers.set("Location", new URL("/auth/error", origin).toString());
+    response.headers.set(
+      "Location",
+      new URL("/sign-in?oauth=unavailable", origin).toString(),
+    );
     return response;
   }
 }
