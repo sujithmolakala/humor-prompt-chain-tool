@@ -3,6 +3,8 @@ import {
   executeChain,
   validateSnapshot,
   validateIntermediate,
+  validateIntermediateText,
+  OutputValidationError,
   threeCaptions,
   type ExecutionSnapshot,
   type ExecutionStep,
@@ -155,10 +157,12 @@ export async function runExecution({
         );
         log("execution_provider_response_received");
         phase = "validation";
-        const accepted = validate(output);
+        const accepted = validate(
+          _final ? output : validateIntermediateText(output),
+        );
         log("execution_output_validated", {
-          outputFields: ["observations", "ideas", "captions"].filter((key) =>
-            Object.hasOwn(accepted, key),
+          outputFields: ["text", "observations", "ideas", "captions"].filter(
+            (key) => Object.hasOwn(accepted, key),
           ),
         });
         phase = "journal_output";
@@ -195,9 +199,12 @@ export async function runExecution({
             fromStep: i + 1,
             toStep: i + 2,
             checkpointState: "acknowledged",
-            previousOutputFields: ["observations", "ideas", "captions"].filter(
-              (key) => Object.hasOwn(accepted, key),
-            ),
+            previousOutputFields: [
+              "text",
+              "observations",
+              "ideas",
+              "captions",
+            ].filter((key) => Object.hasOwn(accepted, key)),
           });
         // executeChain validates once more after invocation; classify that as
         // validation too, rather than as an ambiguous database/provider failure.
@@ -298,6 +305,9 @@ export async function runExecution({
       "execution_stopped",
       {
         ...safeFailureDiagnostic(error),
+        ...(error instanceof OutputValidationError
+          ? { validationCode: error.validationCode }
+          : {}),
         outcome,
         reason,
         abortSource: signal.aborted

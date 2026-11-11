@@ -121,7 +121,7 @@ test("real SQL recovery: atomic final output, lost acknowledgements, interrupted
             throw new TypeError("fixture connection interrupted");
           return step.position === run.snapshot.steps.length
             ? final
-            : intermediate(calls);
+            : { text: `Saved observation ${calls}` };
         },
         progress: async (entry) => {
           if (

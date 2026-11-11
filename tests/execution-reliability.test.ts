@@ -77,7 +77,7 @@ test("known completed output rejection is failed, while transport/journal uncert
           if (mode === "contract")
             return { description: "private-model-content" };
           if (i > 0) assert.match(prompt, /fixture-output/);
-          return i === 3 ? captions : { observations: [`fixture-output-${i}`] };
+          return i === 3 ? captions : { text: `fixture-output-${i}` };
         },
         progress: async (entry) => {
           entries.push(entry);
@@ -259,7 +259,7 @@ test("real journal keeps rejected output failed and lost save acknowledgement un
           calls++;
           return mode === "contract"
             ? { unexpected: "response" }
-            : { observations: ["valid response"] };
+            : { text: "valid response" };
         },
         progress: async (entry) => {
           await actor("select pct_progress($1,$2,$3,$4) data", [

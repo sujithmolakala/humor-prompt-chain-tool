@@ -66,7 +66,7 @@ test("reproduce the 20-second cutoff, then allow a valid slow response within th
   global.fetch = async (_url, init) => {
     calls++;
     return delayedResponse(25000, init!.signal!, {
-      observations: ["private fixture response"],
+      text: "private fixture response",
     });
   };
   try {
@@ -105,7 +105,7 @@ test("reproduce the 20-second cutoff, then allow a valid slow response within th
       assert.equal(budget.signal.aborted, false);
       t.mock.timers.tick(4000);
       assert.deepEqual(await fixed, {
-        observations: ["private fixture response"],
+        text: "private fixture response",
       });
       assert.equal(
         calls,
@@ -135,7 +135,7 @@ test("a slow Gemini request at any step completes all four steps and streams fin
         return delayedResponse(
           i === slowStep ? 25000 : 1000,
           init!.signal!,
-          i === 3 ? final : { observations: [`Observation ${i}`] },
+          i === 3 ? final : { text: `Observation ${i}` },
         );
       };
       const deferred: (() => Promise<void>)[] = [],
@@ -198,7 +198,7 @@ test("the execution deadline still aborts a genuinely over-budget request and pr
   global.fetch = async (_url, init) => {
     const i = calls++;
     return delayedResponse(i === 1 ? 100000 : 1000, init!.signal!, {
-      observations: ["Saved response"],
+      text: "Saved response",
     });
   };
   try {

@@ -123,7 +123,7 @@ test("four-step logs prove each transition follows its acknowledged checkpoint a
       signal: new AbortController().signal,
       emit: () => {},
       generate: async () =>
-        ++calls === 4 ? final : { observations: ["private output"] },
+        ++calls === 4 ? final : { text: "private output" },
       progress: async (entry) => {
         if (entry.result) saved.push(entry.result);
       },
@@ -193,7 +193,7 @@ test("checkpoint interruption is logged at error severity with safe category and
       emit: () => {},
       generate: async () => {
         calls++;
-        return { observations: ["private output"] };
+        return { text: "private output" };
       },
       progress: async (entry) => {
         if (entry.result && entry.step_index === 1)
@@ -238,8 +238,7 @@ test("unavailable logging never turns a successful execution into an error or re
       snapshot,
       signal: new AbortController().signal,
       emit: (event) => events.push(event),
-      generate: async () =>
-        ++calls === 4 ? final : { observations: ["observation"] },
+      generate: async () => (++calls === 4 ? final : { text: "observation" }),
       progress: async () => {},
     });
     assert.equal(calls, 4);
