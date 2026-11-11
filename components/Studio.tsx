@@ -33,6 +33,8 @@ export default function Studio({
     [error, setError] = useState(""),
     [drag, setDrag] = useState<number | null>(null),
     [dirty, setDirty] = useState(false);
+  const saving = useRef(false);
+  const [pendingChain, setPendingChain] = useState<string | null>(null);
   const dirtyForms = useRef(new Set<HTMLFormElement>()),
     submitted = useRef<HTMLFormElement | null>(null);
   useEffect(() => {
@@ -63,6 +65,8 @@ export default function Studio({
     payload: Record<string, unknown>,
     duplicate = false,
   ) {
+    if (saving.current) return;
+    saving.current = true;
     const form = submitted.current;
     submitted.current = null;
     setBusy(true);
@@ -83,17 +87,23 @@ export default function Studio({
       setState(data);
       if (form) dirtyForms.current.delete(form);
       setDirty(dirtyForms.current.size > 0);
-      setNotice("Saved to Supabase.");
+      setNotice(
+        operation === "set_chain_active"
+          ? "Status saved to Supabase. Active chain allocations rebalanced proportionally."
+          : "Saved to Supabase.",
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed.");
       setNotice("");
-      if (operation === "reorder") {
+      if (operation === "reorder" || operation === "set_chain_active") {
         try {
           const r = await fetch("/api/chains");
           if (r.ok) setState(await r.json());
         } catch {}
       }
     } finally {
+      saving.current = false;
+      setPendingChain(null);
       setBusy(false);
     }
   }
@@ -279,9 +289,41 @@ export default function Studio({
                 <section className="panel chain-card" key={c.id}>
                   <div className="section-heading">
                     <span className="chain-glyph">⌘</span>
-                    <span className="tag">
-                      {c.enabled ? "Active" : "Inactive"}
-                    </span>
+                    <div className="chain-status">
+                      <span className="tag">
+                        {c.enabled ? "Active" : "Inactive"}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={c.enabled}
+                        aria-label={`Active status for ${c.name}`}
+                        aria-busy={pendingChain === c.id}
+                        className="chain-status-switch"
+                        disabled={!ready || busy}
+                        title={
+                          c.enabled
+                            ? "Deactivate chain; rebalance remaining allocations"
+                            : "Activate chain; rebalance active allocations"
+                        }
+                        onClick={() => {
+                          if (saving.current) return;
+                          if (!c.enabled && !c.steps.length) {
+                            setError(
+                              "Add at least one workflow step before activating this chain.",
+                            );
+                            return;
+                          }
+                          setPendingChain(c.id);
+                          void save("set_chain_active", {
+                            id: c.id,
+                            enabled: !c.enabled,
+                          });
+                        }}
+                      >
+                        <span aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
                   <h2>
                     <Link href={`/chains/${c.id}`}>{c.name}</Link>

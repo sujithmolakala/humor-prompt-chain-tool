@@ -1,4 +1,5 @@
 import Link from "next/link";
+import RecoverExecution from "@/components/RecoverExecution";
 import { notFound } from "next/navigation";
 import { requireAdminPage } from "@/lib/auth";
 import { getHistory } from "@/lib/tool-data";
@@ -59,6 +60,9 @@ export default async function RunDetail({
                 "This run has not reported completion. Do not assume failure or retry automatically; model charges may have occurred."}
             </p>
           )}
+          {run.status !== "completed" && run.actor === access.identity.id && (
+            <RecoverExecution id={run.id} />
+          )}
           <Link href={`/chains/${run.chain_id}`}>Open current chain →</Link>
           <p className="muted">
             The saved snapshot below retains the original name, prompts, order,
@@ -74,7 +78,9 @@ export default async function RunDetail({
                 {run.outputs[i]
                   ? "Completed"
                   : run.current_step === i
-                    ? "Started / unconfirmed"
+                    ? run.status === "failed"
+                      ? "Stopped / no accepted output"
+                      : "Started / unconfirmed"
                     : "Not started"}
               </summary>
               <p className="muted">

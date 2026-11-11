@@ -68,7 +68,7 @@ Do not run a blanket `supabase db push` against the shared project.
 5. Obtain explicit owner approval, then install only the missing reviewed migrations in order. This repository does not connect a migration runner to hosted Supabase. Signup hook/configuration is unnecessary and excluded.
 6. Verify role denials and private storage with separate hosted test identities before live generation. Approve an existing image-capable Gemini model through Settings (explicitly labeled real billable probe).
 
-RLS is enabled with no direct table grants for `pct_*` journals. Only checked functions are executable by authenticated clients. Storage restrictive policies constrain just the new bucket, even if legacy permissive policies exist. Images cannot be overwritten/deleted through ordinary API clients. Shared chain editing intentionally changes future configurations; the application does not activate or change the existing public mix or public runtime feature flag.
+RLS is enabled with no direct table grants for `pct_*` journals. Only checked functions are executable by authenticated clients. Storage restrictive policies constrain just the new bucket, even if legacy permissive policies exist. Images cannot be overwritten/deleted through ordinary API clients. Shared chain editing intentionally changes future configurations; the listing status switches update the shared active-chain mix using the existing checked RPC. Activating assigns the new chain an equal share and scales existing allocations proportionally; deactivating scales the remaining allocations to 100%. The public runtime feature flag is not changed.
 
 ## Execution and template contract
 
@@ -84,7 +84,7 @@ Each step receives the original normalized image and previous structured output 
 
 The final step must use `auto`, `caption_generation`, or `refinement`. Model settings are resolved from actual `llm_models` and the configured default. No arbitrary model name is silently substituted. Model-parameter edits invalidate existing adapter approval.
 
-One run per administrator can be active within three minutes; maximum 30 new starts/hour. Each provider call has a 20-second timeout, the workflow has a 95-second budget, and Vercel route duration is 120 seconds. Select a plan supporting that duration. Supabase reservation is serialized per administrator and carries immutable attribution. Reusing the same request ID does not issue another model call. No automatic resume or provider retry is claimed; transport uncertainty can mean a charge occurred. Inspect history before explicitly preparing a new billable run.
+One run per administrator can be active within three minutes; maximum 30 new starts/hour. Execution calls share a workflow budget of up to 95 seconds within the 120-second Vercel route limit; elapsed setup time and a finalization reserve bound the remaining budget. There is no nested 20-second cutoff for execution steps. Standalone provider calls without an execution deadline retain a 20-second safeguard. Select a plan supporting that duration. Supabase reservation is serialized per administrator and carries immutable attribution. Reusing the same request ID does not issue another model call. Manual safe recovery reuses saved outputs and refuses to repeat a started/unconfirmed step. No automatic provider retry occurs; transport uncertainty can mean a charge occurred. Inspect history before explicitly preparing a new billable run.
 
 ## Reordering and history
 

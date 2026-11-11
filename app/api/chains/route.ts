@@ -3,6 +3,7 @@ import { getState, rpc } from "@/lib/tool-data";
 import { checkOrigin, jsonBody } from "@/lib/security";
 import { apiError, json } from "@/lib/http";
 import { z } from "zod";
+import { setChainActive } from "@/lib/chain-status";
 import { verifyModelApproval } from "@/lib/verify-model-approval";
 export async function GET() {
   try {
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
     const i = z
       .object({
         operation: z.enum([
+          "set_chain_active",
           "create_chain",
           "edit_chain",
           "delete_chain",
@@ -33,6 +35,15 @@ export async function POST(request: Request) {
       })
       .strict()
       .parse(await jsonBody(request, 65536));
+    if (i.operation === "set_chain_active") {
+      const payload = z
+        .object({ id: z.uuid(), enabled: z.boolean() })
+        .strict()
+        .parse(i.payload);
+      return json(
+        await setChainActive(access, payload.id, payload.enabled, i.revision),
+      );
+    }
     if (i.operation === "approve_model")
       await verifyModelApproval(access, i.payload, i.revision);
     return json(

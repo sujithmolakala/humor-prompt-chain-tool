@@ -15,6 +15,7 @@ const { db } = await runtimeFixture();
 for (const f of [
   "202611030001_chain_tool.sql",
   "202611030002_chain_duplication.sql",
+  "202611050001_execution_recovery.sql",
 ])
   await db.exec(await readFile("supabase/migrations/" + f, "utf8"));
 await adminSave(db, "edit_step", {
@@ -149,6 +150,9 @@ const server = createServer((req, res) => {
             "hs_admin_state",
             "hs_admin_save",
             "hs_admin_telemetry",
+            "pct_recovery_ready",
+            "pct_resume",
+            "pct_stop",
             "pct_start",
             "pct_progress",
             "pct_history",

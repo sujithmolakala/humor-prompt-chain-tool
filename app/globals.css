@@ -1029,3 +1029,37 @@ code {
     font-size: 40px;
   }
 }
+
+.chain-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.chain-status-switch {
+  width: 40px;
+  min-height: 24px;
+  height: 24px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--border);
+  flex-shrink: 0;
+  justify-content: flex-start;
+}
+.chain-status-switch[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.chain-status-switch > span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text);
+}
+.chain-status-switch[aria-checked="true"] > span {
+  transform: translateX(14px);
+  background: var(--surface);
+}
+.chain-status-switch[aria-busy="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}

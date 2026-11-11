@@ -1,35 +1,47 @@
+import { executionLogProbe } from "@/lib/execution-log-probe";
+import { executionTrace } from "@/lib/execution-diagnostics";
 import { requireSuperadmin } from "@/lib/auth";
-import {
-  checkOrigin,
-  checkFormKeys,
-  idSchema,
-  privateHeaders,
-  AppError,
-} from "@/lib/security";
+import { checkOrigin, checkFormKeys, idSchema, AppError } from "@/lib/security";
 import { uploadForm, validateImage } from "@/lib/images";
 import { apiError, json } from "@/lib/http";
 import { rpc } from "@/lib/tool-data";
-import { executeChain, type ExecutionSnapshot } from "@/lib/chain-execution";
-import { generate, providerKey } from "@/lib/provider";
+import { type ExecutionSnapshot } from "@/lib/chain-execution";
+import { executionStream } from "@/lib/execution-stream";
+import { providerKey } from "@/lib/provider";
 import { createHash } from "node:crypto";
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+// A GET checks runtime logging only. It cannot reserve or dispatch generation.
+export async function GET() {
+  return executionLogProbe(requireSuperadmin);
+}
 export const maxDuration = 120;
 export async function POST(request: Request) {
+  const trace = executionTrace();
+  trace.event("request_received", { method: "POST", route: "/api/execute" });
   try {
     checkOrigin(request);
-    const access = await requireSuperadmin();
+    const access = await trace.measure("authorization", requireSuperadmin);
     const key = providerKey();
-    const form = await uploadForm(request);
+    await trace.measure("journal_capabilities", () =>
+      rpc(access, "pct_recovery_ready"),
+    );
+    const form = await trace.measure("upload_form", () => uploadForm(request));
     checkFormKeys(form, ["requestId", "chainId", "image"]);
     const token = idSchema.parse(form.get("requestId")),
       chain = idSchema.parse(form.get("chainId"));
-    const image = await validateImage(form.get("image"));
+    trace.identify(token);
+    const image = await trace.measure("image_validation", () =>
+      validateImage(form.get("image")),
+    );
     const path = `${access.identity.id}/${token}-${image.byteHash}.webp`;
     const storage = access.client.storage.from("prompt-chain-inputs");
-    const { error } = await storage.upload(path, image.bytes, {
-      contentType: image.mime,
-      upsert: false,
-    });
+    const { error } = await trace.measure("image_storage", () =>
+      storage.upload(path, image.bytes, {
+        contentType: image.mime,
+        upsert: false,
+      }),
+    );
     if (error) {
       const { data } = await storage.download(path);
       if (
@@ -43,94 +55,37 @@ export async function POST(request: Request) {
           503,
         );
     }
-    const reservation = await rpc<{
-      dispatch: boolean;
-      id: string;
-      snapshot: ExecutionSnapshot;
-    }>(access, "pct_start", {
-      token,
-      target: chain,
-      saved_path: path,
-      source_hash: image.byteHash,
-    });
+    const reservation = await trace.measure("reservation", () =>
+      rpc<{
+        dispatch: boolean;
+        id: string;
+        snapshot: ExecutionSnapshot;
+      }>(access, "pct_start", {
+        token,
+        target: chain,
+        saved_path: path,
+        source_hash: image.byteHash,
+      }),
+    );
+    trace.event("reservation", { dispatch: reservation.dispatch });
     if (!reservation.dispatch) return json({ existing: true, id: token }, 200);
-    const stream = new ReadableStream({
-      async start(controller) {
-        const emit = (event: unknown) => {
-          try {
-            controller.enqueue(
-              new TextEncoder().encode(JSON.stringify(event) + "\n"),
-            );
-          } catch {
-            /* client disconnected; retain journal */
-          }
-        };
-        const deadline = AbortSignal.timeout(95000);
-        try {
-          emit({ type: "started", id: token, snapshot: reservation.snapshot });
-          const result = await executeChain(
-            reservation.snapshot,
-            [],
-            async (step, index, prompt, _final, validate) => {
-              if (deadline.aborted) throw new Error("deadline");
-              await rpc(access, "pct_progress", { token, step_index: index });
-              emit({ type: "running", index });
-              const output = validate(
-                await generate(step, prompt, image.bytes, key, deadline),
-              );
-              await rpc(access, "pct_progress", {
-                token,
-                step_index: index,
-                result: output,
-              });
-              emit({ type: "completed", index, output });
-              return output;
-            },
-            5,
-          );
-          await rpc(access, "pct_progress", {
-            token,
-            step_index: 0,
-            outcome: "completed",
-          });
-          emit({ type: "finished", id: token, result });
-        } catch (error) {
-          // No automatic retry of a potentially billed call. Failed journal writes leave a visible running record.
-          const uncertain = !(error instanceof AppError);
-          try {
-            await rpc(access, "pct_progress", {
-              token,
-              step_index: 0,
-              outcome: uncertain ? "uncertain" : "failed",
-            });
-          } catch {
-            /* history remains authoritative; never claim completion */
-          }
-          emit({
-            type: "error",
-            id: token,
-            error:
-              error instanceof AppError
-                ? error.message
-                : "Execution interrupted; provider outcome may be unknown. Inspect history before starting a new billable run.",
-          });
-        } finally {
-          try {
-            controller.close();
-          } catch {
-            /* disconnected */
-          }
-        }
-      },
-    });
-    return new Response(stream, {
-      headers: {
-        ...privateHeaders,
-        "Content-Type": "application/x-ndjson",
-        "X-Accel-Buffering": "no",
-      },
-    });
+    return executionStream(
+      access,
+      token,
+      reservation.snapshot,
+      image.bytes,
+      key,
+      [],
+      { requestSignal: request.signal, trace },
+    );
   } catch (error) {
+    trace.event(
+      "request_stopped",
+      {
+        requestOutcome: "no_new_provider_dispatch",
+      },
+      "error",
+    );
     return apiError(error);
   }
 }

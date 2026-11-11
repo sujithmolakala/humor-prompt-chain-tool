@@ -45,12 +45,12 @@ export default function Execute({
       prompt_template: s.template,
       execution_role: s.role,
     })) || selected?.steps;
-  async function start() {
+  async function start(resume = false) {
     if (!file || busy || !selected) return;
     setBusy(true);
     setError("");
     setFinished(false);
-    setOutputs([]);
+    if (!resume) setOutputs([]);
     setRunning(-1);
     setUncertain(false);
     if (!token.current) token.current = crypto.randomUUID();
@@ -60,7 +60,10 @@ export default function Execute({
       body.set("requestId", token.current);
       body.set("chainId", chain);
       body.set("image", file);
-      const response = await fetch("/api/execute", { method: "POST", body });
+      const response = await fetch(
+        resume ? `/api/execute/${token.current}/resume` : "/api/execute",
+        { method: "POST", ...(resume ? {} : { body }) },
+      );
       if (!response.ok) {
         const data = await response.json();
         throw Error(data.error || "Could not start execution.");
@@ -68,6 +71,13 @@ export default function Execute({
       if (response.headers.get("Content-Type")?.includes("application/json")) {
         const data = await response.json();
         setRun(data.id);
+        if (data.run?.status === "completed") {
+          setSnapshot(data.run.snapshot);
+          setOutputs(data.run.outputs);
+          setFinished(true);
+          setUncertain(false);
+          return;
+        }
         setError(
           "This request is already reserved. View saved history to check its outcome. No model call was repeated.",
         );
@@ -102,8 +112,7 @@ export default function Execute({
           if (e.type === "error") {
             terminal = true;
             setError(e.error);
-            setUncertain(true);
-            setRunning(-1);
+            setUncertain(e.outcome !== "failed");
           }
         }
         if (done) break;
@@ -172,7 +181,7 @@ export default function Execute({
         <button
           className="button primary full"
           disabled={busy || !!run || !file || !selected?.steps.length}
-          onClick={start}
+          onClick={() => start()}
         >
           {busy ? "Executing workflow…" : "Run chain →"}
         </button>
@@ -190,6 +199,11 @@ export default function Execute({
             <Link className="button" href={`/history/${run}`}>
               Inspect saved execution
             </Link>
+            {!busy && !finished && (
+              <button onClick={() => start(true)}>
+                Recover saved run / resume safe steps
+              </button>
+            )}
             {!busy && (
               <button
                 onClick={() => {
@@ -236,8 +250,12 @@ export default function Execute({
                       : running === index && busy
                         ? "Running"
                         : uncertain
-                          ? "Not confirmed"
-                          : "Pending"}
+                          ? running === index
+                            ? "Not confirmed"
+                            : "Not started"
+                          : error && running === index
+                            ? "Stopped"
+                            : "Pending"}
                   </span>
                 </div>
                 <p className="muted">{s.prompt_template}</p>

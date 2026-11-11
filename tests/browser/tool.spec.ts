@@ -341,3 +341,69 @@ test("Humor Study Studio login contains exactly the requested text and unrestric
   for (const key of ["hd", "domain", "login_hint", "organization"])
     expect(destination.searchParams.has(key)).toBe(false);
 });
+
+test("chain status switches save, survive refresh, handle errors, and keep editor links usable", async ({
+  page,
+  context,
+}) => {
+  await login(context);
+  await page.goto("/chains");
+  const first = page.getByRole("switch", {
+    name: "Active status for Chain 1",
+    exact: true,
+  });
+  const second = page.getByRole("switch", {
+    name: "Active status for Chain 2",
+    exact: true,
+  });
+  await expect(first).toHaveAttribute("aria-checked", "false");
+  await first.focus();
+  await first.press("Space");
+  await expect(first).toHaveAttribute("aria-checked", "true");
+  await expect(first.locator("..").locator(".tag")).toHaveText("Active");
+  await page.reload();
+  await expect(first).toHaveAttribute("aria-checked", "true");
+  await second.click();
+  await expect(second).toHaveAttribute("aria-checked", "true");
+  await first.click();
+  await expect(first).toHaveAttribute("aria-checked", "false");
+  await page.reload();
+  await expect(first).toHaveAttribute("aria-checked", "false");
+  // Save elsewhere after this tab loaded: its next toggle must fail with 409.
+  const state = await (await context.request.get("/api/chains")).json();
+  const elsewhere = await context.request.post("/api/chains", {
+    headers: { origin: "http://localhost:4318" },
+    data: {
+      operation: "set_chain_active",
+      payload: { id: chain, enabled: true },
+      revision: state.settings.revision,
+    },
+  });
+  expect(elsewhere.status()).toBe(200);
+  await second.click();
+  await expect(page.getByRole("alert")).toContainText(
+    "changed in another session",
+  );
+  await expect(second).toHaveAttribute("aria-checked", "true");
+  await page.reload();
+  await page.route("**/api/chains", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        status: 503,
+        json: { error: "Saving is temporarily unavailable. Try again." },
+      });
+    } else await route.continue();
+  });
+  await first.click();
+  await expect(page.getByRole("alert")).toContainText(
+    "temporarily unavailable",
+  );
+  await expect(first).toHaveAttribute("aria-checked", "true");
+  await page.unroute("**/api/chains");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(first).toBeVisible();
+  const card = first.locator("xpath=ancestor::section");
+  await card.getByRole("link", { name: "Open editor" }).click();
+  await expect(page).toHaveURL(new RegExp(`/chains/${chain}$`));
+  await expect(page.getByRole("switch")).toHaveCount(0);
+});
